@@ -38,3 +38,6 @@ terraform.rc
 
 # Ignore key files
 *.pem
+
+# Ignore .tfbackend files
+*.tfbackend
