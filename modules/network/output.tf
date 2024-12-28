@@ -38,6 +38,14 @@ output "security_group_for_internal_alb_id" {
   value = aws_security_group.internal_alb.id
 }
 
+output "security_group_for_ingress_alb_id" {
+  value = aws_security_group.ingress_alb.id
+}
+
+output "security_group_for_frontend_container_id" {
+  value = aws_security_group.frontend.id
+}
+
 output "security_group_for_backend_container_id" {
   value = aws_security_group.backend.id
 }

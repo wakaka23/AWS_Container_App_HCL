@@ -1,0 +1,31 @@
+variable "common" {
+  type = object({
+    env        = string
+    account_id = string
+  })
+}
+
+variable "network" {
+  type = object({
+    vpc_id                                  = string
+    private_subnet_for_container_ids        = list(string)
+    security_group_for_backend_container_id = string
+  })
+}
+
+variable "alb_internal" {
+  type = object({
+    alb_listener_internal_blue_arn       = string
+    alb_target_group_internal_blue_name  = string
+    alb_target_group_internal_blue_arn   = string
+    alb_listener_internal_green_arn      = string
+    alb_target_group_internal_green_name = string
+    alb_target_group_internal_green_arn  = string
+  })
+}
+
+variable "secrets_manager" {
+  type = object({
+    secret_for_db_arn = string
+  })
+}

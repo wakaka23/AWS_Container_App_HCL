@@ -13,7 +13,6 @@ data "aws_ami" "amazon-linux-2" {
 }
 
 # Define EC2 instance
-# Ref. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 resource "aws_instance" "main" {
   for_each               = { for i, s in var.network.private_subnet_for_management_ids : i => s }
   ami                    = data.aws_ami.amazon-linux-2.id
