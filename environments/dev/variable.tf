@@ -7,3 +7,10 @@ variable "db" {
     db_user_password        = string
   })
 }
+
+variable "github_actions" {
+  type = object({
+    account_name = string
+    repository   = string
+  }) 
+}

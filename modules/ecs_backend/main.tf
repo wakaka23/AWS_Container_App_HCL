@@ -91,10 +91,14 @@ resource "aws_ecs_service" "backend" {
 ########################
 # CodeDeploy
 ########################
+
+# Define CodeDeploy application
 resource "aws_codedeploy_app" "backend" {
   compute_platform = "ECS"
   name             = "${var.common.env}-backend-app"
 }
+
+# Define CodeDeploy deployment group
 resource "aws_codedeploy_deployment_group" "backend" {
   app_name               = aws_codedeploy_app.backend.name
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
@@ -139,10 +143,14 @@ resource "aws_codedeploy_deployment_group" "backend" {
 ########################
 # Service Discovery
 ########################
+
+# Define private DNS namespace
 resource "aws_service_discovery_private_dns_namespace" "backend" {
   name = "local"
   vpc  = var.network.vpc_id
 }
+
+# Define service
 resource "aws_service_discovery_service" "backend" {
   name = "${var.common.env}-ecs-backend-service"
   dns_config {
@@ -162,6 +170,7 @@ resource "aws_service_discovery_service" "backend" {
 # CloudWatch Logs
 ########################
 
+# Define CloudWatch log group
 resource "aws_cloudwatch_log_group" "backend" {
   name              = "/ecs/${var.common.env}-backend"
   retention_in_days = 14
@@ -209,7 +218,7 @@ data "aws_iam_policy_document" "policy_for_access_to_secrets_manager" {
   }
 }
 
-# Define IAM role policy for ECS task execution role
+# Associate IAM policies with ECS task execution role
 resource "aws_iam_role_policy_attachments_exclusive" "task_execution_role" {
   role_name = aws_iam_role.task_execution_role.name
   policy_arns = [
@@ -236,10 +245,81 @@ data "aws_iam_policy_document" "trust_policy_for_codedeploy" {
   }
 }
 
-# Define IAM role policy for CodeDeploy role
+# Associate IAM policy with CodeDeploy role
 resource "aws_iam_role_policy_attachments_exclusive" "codedeploy" {
   role_name = aws_iam_role.codedeploy.name
   policy_arns = [
     "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+  ]
+}
+
+# Define IAM role for Github Actions
+resource "aws_iam_role" "github_actions" {
+  name               = "${var.common.env}-role-for-github-actions"
+  assume_role_policy = data.aws_iam_policy_document.trust_policy_for_github_actions.json
+}
+
+# Define trust policy for Github Actions role
+data "aws_iam_policy_document" "trust_policy_for_github_actions" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Federated"
+      identifiers = ["arn:aws:iam::${var.common.account_id}:oidc-provider/token.actions.githubusercontent.com"]
+    }
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    condition {
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.github_actions.account_name}/${var.github_actions.repository}:*"]
+    }
+  }
+}
+
+# Define IAM policy for Github Actions
+resource "aws_iam_policy" "policy_for_github_actions" {
+  name   = "${var.common.env}-policy-for-github-actions"
+  policy = data.aws_iam_policy_document.policy_for_github_actions.json
+}
+
+data "aws_iam_policy_document" "policy_for_github_actions" {
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchGetImage",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart",
+      "ecs:DescribeTaskDefinition",
+      "ecs:RegisterTaskDefinition",
+      "ecs:UpdateService",
+      "ecs:DescribeServices"
+    ]
+  }
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
+    actions = [
+      "iam:PassRole"
+    ]
+    condition {
+      test     = "StringLike"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+# Associate IAM policies with Github Actions role
+resource "aws_iam_role_policy_attachments_exclusive" "github_actions" {
+  role_name = aws_iam_role.github_actions.name
+  policy_arns = [
+    "arn:aws:iam::aws:policy/IAMReadOnlyAccess",
+    aws_iam_policy.policy_for_github_actions.arn
   ]
 }

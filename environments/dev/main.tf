@@ -35,25 +35,26 @@ module "alb_internal" {
 }
 
 module "ecs_backend" {
-  source       = "../../modules/ecs_backend"
-  common       = local.common
-  network      = module.network
-  alb_internal = module.alb_internal
+  source          = "../../modules/ecs_backend"
+  common          = local.common
+  github_actions  = var.github_actions
+  network         = module.network
+  alb_internal    = module.alb_internal
   secrets_manager = module.secrets_manager
 }
 
 module "alb_ingress" {
-  source = "../../modules/alb_ingress"
-  common = local.common
+  source  = "../../modules/alb_ingress"
+  common  = local.common
   network = module.network
 }
 
 module "ecs_frontend" {
-  source       = "../../modules/ecs_frontend"
-  common       = local.common
-  network      = module.network
-  alb_ingress  = module.alb_ingress
-  alb_internal = module.alb_internal
+  source          = "../../modules/ecs_frontend"
+  common          = local.common
+  network         = module.network
+  alb_ingress     = module.alb_ingress
+  alb_internal    = module.alb_internal
   secrets_manager = module.secrets_manager
 }
 
@@ -65,8 +66,8 @@ module "rds" {
 }
 
 module "secrets_manager" {
-  source = "../../modules/secrets_manager"
-  common = local.common
+  source  = "../../modules/secrets_manager"
+  common  = local.common
   db_info = var.db
-  rds    = module.rds
+  rds     = module.rds
 }
