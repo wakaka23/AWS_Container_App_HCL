@@ -8,6 +8,12 @@ variable "db" {
   })
 }
 
+variable "domain_alb_ingress" {
+  type = object({
+    domain_name = string
+  })
+}
+
 variable "github_actions" {
   type = object({
     account_name = string

@@ -4,6 +4,12 @@ variable "common" {
   })
 }
 
+variable "domain" {
+  type = object({
+    domain_name = string
+  })
+}
+
 variable "network" {
   type = object({
     vpc_id    = string

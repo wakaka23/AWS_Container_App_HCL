@@ -46,6 +46,7 @@ module "ecs_backend" {
 module "alb_ingress" {
   source  = "../../modules/alb_ingress"
   common  = local.common
+  domain = var.domain_alb_ingress
   network = module.network
 }
 

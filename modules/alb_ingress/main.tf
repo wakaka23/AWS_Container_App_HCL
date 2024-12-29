@@ -43,3 +43,24 @@ resource "aws_lb_target_group" "ingress" {
     matcher             = 200
   }
 }
+
+########################
+# Route53 Public Hosted Zone
+########################
+
+# Refer to public hosted zone
+data "aws_route53_zone" "public" {
+  name = var.domain.domain_name
+}
+
+# Define Alias record for internal ALB
+resource "aws_route53_record" "alb_ingress" {
+  zone_id = data.aws_route53_zone.public.zone_id
+  name    = "www.${data.aws_route53_zone.public.name}"
+  type    = "A"
+  alias {
+    name                   = aws_lb.ingress.dns_name
+    zone_id                = aws_lb.ingress.zone_id
+    evaluate_target_health = false
+  }
+}
