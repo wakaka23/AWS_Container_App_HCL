@@ -51,7 +51,7 @@ resource "aws_lb_listener" "internal_green" {
   port              = "10080"
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.internal_green.arn
+    target_group_arn = aws_lb_target_group.internal_blue.arn
   }
 }
 
