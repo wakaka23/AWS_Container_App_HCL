@@ -25,7 +25,7 @@ inputs:
 runs:
   using: composite
   steps:
-    # タスク定義をGithub Hosted Runner上にダウンロード（task-def.jsonというファイル名）
+    # タスク定義をGithub Hosted Runnerにて取得（ファイル名：task-def.json）
     - run: |                                                 
         aws ecs describe-task-definition --task-definition "${TASK_DEFINITION}" \
         --query taskDefinition --output json > "${RUNNER_TEMP}/task-def.json"
@@ -33,10 +33,8 @@ runs:
         TASK_DEFINITION: ${{ inputs.task-definition }}
       shell: bash
 
-    # ローカルにダウンロードしてきたタスク定義（task-def.json）におけるコンテナイメージURIを更新する
-    # 今回の例では、Github commit hashを示すタグをつけるように毎回更新している
-    # task-definitionで更新するタスク定義ファイルを指定、container-nameで更新するコンテナ名を指定して、imageでコンテナイメージURIを更新する。
-    # このActionはコンテナイメージURIを指定するためのもの
+    # Github Hosted Runnerにて取得したタスク定義（task-def.json）におけるコンテナイメージURIを更新する
+    # task-definitionで更新するタスク定義ファイルを指定・container-nameで更新するコンテナ名を指定・imageでコンテナイメージURIを指定
     - uses: aws-actions/amazon-ecs-render-task-definition@v1 
       id: render
       with:
