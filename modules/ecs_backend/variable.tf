@@ -1,6 +1,7 @@
 variable "common" {
   type = object({
     env        = string
+    region     = string
     account_id = string
   })
 }
@@ -35,4 +36,8 @@ variable "secrets_manager" {
   type = object({
     secret_for_db_arn = string
   })
+}
+
+variable "repository" {
+  type = string
 }

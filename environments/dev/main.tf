@@ -41,12 +41,13 @@ module "ecs_backend" {
   network         = module.network
   alb_internal    = module.alb_internal
   secrets_manager = module.secrets_manager
+  repository      = module.ecr.backend_repository_arn
 }
 
 module "alb_ingress" {
   source  = "../../modules/alb_ingress"
   common  = local.common
-  domain = var.domain_alb_ingress
+  domain  = var.domain_alb_ingress
   network = module.network
 }
 

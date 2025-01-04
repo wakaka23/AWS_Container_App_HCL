@@ -284,39 +284,73 @@ resource "aws_iam_policy" "policy_for_github_actions" {
 
 data "aws_iam_policy_document" "policy_for_github_actions" {
   statement {
+    sid = "GetAuthorizationToken"
     effect    = "Allow"
-    resources = ["*"]
     actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchGetImage",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart",
-      "ecs:DescribeTaskDefinition",
-      "ecs:RegisterTaskDefinition",
-      "ecs:UpdateService",
-      "ecs:DescribeServices",
-      "codedeploy:GetDeploymentGroup",
-      "codedeploy:CreateDeployment",
-      "codedeploy:GetDeployment",
-      "codedeploy:GetDeploymentConfig",
-      "codedeploy:RegisterApplicationRevision"
+      "ecr:GetAuthorizationToken"
     ]
+    resources = ["*"]
   }
   statement {
+    sid = "PushImageOnly"
     effect    = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage"
+    ]
+    resources = [var.repository]
+  }
+  statement {
+    sid = "RegisterTaskDefinition"
+    effect    = "Allow"
+    actions = [
+      "ecs:RegisterTaskDefinition",
+      "ecs:DescribeTaskDefinition"
+    ]
     resources = ["*"]
+  }
+  statement {
+    sid = "UpdateService"
+    effect    = "Allow"
+    actions = [
+      "ecs:UpdateServicePrimaryTaskSet",
+      "ecs:DescribeServices",
+      "ecs:UpdateService"
+    ]
+    resources = [aws_ecs_service.backend.id]
+  }
+  statement {
+    sid = "PassRole"
+    effect    = "Allow"
     actions = [
       "iam:PassRole"
     ]
+    resources = [aws_iam_role.task_execution_role.arn]
     condition {
       test     = "StringLike"
       variable = "iam:PassedToService"
       values   = ["ecs-tasks.amazonaws.com"]
     }
+  }
+  statement {
+    sid = "DeployService"
+    effect    = "Allow"
+    actions = [
+      "codedeploy:CreateDeployment",
+      "codedeploy:GetDeployment",
+      "codedeploy:GetDeploymentConfig",
+      "codedeploy:GetDeploymentGroup",
+      "codedeploy:RegisterApplicationRevision"
+    ]
+    resources = [
+      aws_codedeploy_app.backend.arn,
+      aws_codedeploy_deployment_group.backend.arn,
+      "arn:aws:codedeploy:${var.common.region}:${var.common.account_id}:deploymentconfig:*"
+    ]
   }
 }
 

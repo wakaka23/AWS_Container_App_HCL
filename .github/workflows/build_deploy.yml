@@ -1,7 +1,11 @@
 name: Deploy container
 run-name: Deploy container
 
-on: workflow_dispatch
+on:
+  push:
+    paths:
+      - 'backend_app/**/*.go'
+  workflow_dispatch:
 
 env:
   ROLE_ARN: arn:aws:iam::${{ secrets.AWS_ID }}:role/${{ vars.ROLE_NAME }}
