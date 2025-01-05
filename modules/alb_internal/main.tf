@@ -14,8 +14,8 @@ resource "aws_lb" "internal" {
   }
 }
 
-# (Blue) Define the listner for internal ALB
-resource "aws_lb_listener" "internal_blue" {
+# Define the production listner for internal ALB
+resource "aws_lb_listener" "internal_prod" {
   load_balancer_arn = aws_lb.internal.arn
   protocol          = "HTTP"
   port              = "80"
@@ -25,7 +25,7 @@ resource "aws_lb_listener" "internal_blue" {
   }
 }
 
-# (Blue) Define target group for internal ALB
+# Define target group Blue for internal ALB
 resource "aws_lb_target_group" "internal_blue" {
   name        = "${var.common.env}-tg-backend-blue"
   port        = 80
@@ -44,8 +44,8 @@ resource "aws_lb_target_group" "internal_blue" {
   }
 }
 
-# (Green) Define the listner for internal ALB
-resource "aws_lb_listener" "internal_green" {
+# Define the test listner for internal ALB
+resource "aws_lb_listener" "internal_test" {
   load_balancer_arn = aws_lb.internal.arn
   protocol          = "HTTP"
   port              = "10080"
@@ -55,7 +55,7 @@ resource "aws_lb_listener" "internal_green" {
   }
 }
 
-# (Green) Define target group for internal ALB
+# Define target group Green for internal ALB
 resource "aws_lb_target_group" "internal_green" {
   name        = "${var.common.env}-tg-backend-green"
   port        = 80

@@ -86,6 +86,11 @@ resource "aws_ecs_service" "backend" {
     container_name   = "app"
     container_port   = 80
   }
+  lifecycle {
+    ignore_changes = [
+      task_definition
+    ]
+  }
 }
 
 ########################
@@ -115,10 +120,10 @@ resource "aws_codedeploy_deployment_group" "backend" {
   load_balancer_info {
     target_group_pair_info {
       prod_traffic_route {
-        listener_arns = [var.alb_internal.alb_listener_internal_blue_arn]
+        listener_arns = [var.alb_internal.alb_listener_internal_prod_arn]
       }
       test_traffic_route {
-        listener_arns = [var.alb_internal.alb_listener_internal_green_arn]
+        listener_arns = [var.alb_internal.alb_listener_internal_test_arn]
       }
       target_group {
         name = var.alb_internal.alb_target_group_internal_blue_name
@@ -284,16 +289,16 @@ resource "aws_iam_policy" "policy_for_github_actions" {
 
 data "aws_iam_policy_document" "policy_for_github_actions" {
   statement {
-    sid = "GetAuthorizationToken"
-    effect    = "Allow"
+    sid    = "GetAuthorizationToken"
+    effect = "Allow"
     actions = [
       "ecr:GetAuthorizationToken"
     ]
     resources = ["*"]
   }
   statement {
-    sid = "PushImageOnly"
-    effect    = "Allow"
+    sid    = "PushImageOnly"
+    effect = "Allow"
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:BatchGetImage",
@@ -305,8 +310,8 @@ data "aws_iam_policy_document" "policy_for_github_actions" {
     resources = [var.repository]
   }
   statement {
-    sid = "RegisterTaskDefinition"
-    effect    = "Allow"
+    sid    = "RegisterTaskDefinition"
+    effect = "Allow"
     actions = [
       "ecs:RegisterTaskDefinition",
       "ecs:DescribeTaskDefinition"
@@ -314,8 +319,8 @@ data "aws_iam_policy_document" "policy_for_github_actions" {
     resources = ["*"]
   }
   statement {
-    sid = "UpdateService"
-    effect    = "Allow"
+    sid    = "UpdateService"
+    effect = "Allow"
     actions = [
       "ecs:UpdateServicePrimaryTaskSet",
       "ecs:DescribeServices",
@@ -324,8 +329,8 @@ data "aws_iam_policy_document" "policy_for_github_actions" {
     resources = [aws_ecs_service.backend.id]
   }
   statement {
-    sid = "PassRole"
-    effect    = "Allow"
+    sid    = "PassRole"
+    effect = "Allow"
     actions = [
       "iam:PassRole"
     ]
@@ -337,8 +342,8 @@ data "aws_iam_policy_document" "policy_for_github_actions" {
     }
   }
   statement {
-    sid = "DeployService"
-    effect    = "Allow"
+    sid    = "DeployService"
+    effect = "Allow"
     actions = [
       "codedeploy:CreateDeployment",
       "codedeploy:GetDeployment",

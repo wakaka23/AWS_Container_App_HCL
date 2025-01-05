@@ -23,10 +23,10 @@ variable "network" {
 
 variable "alb_internal" {
   type = object({
-    alb_listener_internal_blue_arn       = string
+    alb_listener_internal_prod_arn       = string
     alb_target_group_internal_blue_name  = string
     alb_target_group_internal_blue_arn   = string
-    alb_listener_internal_green_arn      = string
+    alb_listener_internal_test_arn       = string
     alb_target_group_internal_green_name = string
     alb_target_group_internal_green_arn  = string
   })
