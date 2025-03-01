@@ -15,6 +15,7 @@ module "network" {
   source  = "../../modules/network"
   common  = local.common
   network = local.network
+  public_hosted_zone = var.public_hosted_zone
 }
 
 module "ec2" {
@@ -47,7 +48,6 @@ module "ecs_backend" {
 module "alb_ingress" {
   source  = "../../modules/alb_ingress"
   common  = local.common
-  domain  = var.domain_alb_ingress
   network = module.network
 }
 

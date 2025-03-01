@@ -5,6 +5,12 @@ variable "common" {
   })
 }
 
+variable "public_hosted_zone" {
+	type = object({
+		domain_name = string
+	})
+}
+
 variable "network" {
 	type = object({
 		cidr = string

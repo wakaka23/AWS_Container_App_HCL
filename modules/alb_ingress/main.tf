@@ -17,8 +17,10 @@ resource "aws_lb" "ingress" {
 # Define the listner for ingress ALB
 resource "aws_lb_listener" "ingress" {
   load_balancer_arn = aws_lb.ingress.arn
-  protocol          = "HTTP"
-  port              = "80"
+  protocol          = "HTTPS"
+  port              = "443"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.ingress.arn
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ingress.arn
@@ -45,22 +47,48 @@ resource "aws_lb_target_group" "ingress" {
 }
 
 ########################
-# Route53 Public Hosted Zone
+# Route53 Alias Record
 ########################
-
-# Refer to public hosted zone
-data "aws_route53_zone" "public" {
-  name = var.domain.domain_name
-}
 
 # Define Alias record for internal ALB
 resource "aws_route53_record" "alb_ingress" {
-  zone_id = data.aws_route53_zone.public.zone_id
-  name    = "www.${data.aws_route53_zone.public.name}"
+  zone_id = var.network.public_hosted_zone_id
+  name    = "www.${var.network.public_hosted_zone_name}"
   type    = "A"
   alias {
     name                   = aws_lb.ingress.dns_name
     zone_id                = aws_lb.ingress.zone_id
     evaluate_target_health = false
   }
+}
+
+########################
+# ACM
+########################
+
+# Define ACM certificate
+resource "aws_acm_certificate" "ingress" {
+  domain_name       = "www.${var.network.public_hosted_zone_name}"
+  validation_method = "DNS"
+  tags = {
+    Name = "${var.common.env}-acm-certificate"
+  }
+}
+
+# Define Route53 record for ACM validation
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.ingress.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  zone_id         = var.network.public_hosted_zone_id
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  type            = each.value.type
+  ttl             = "300"
 }

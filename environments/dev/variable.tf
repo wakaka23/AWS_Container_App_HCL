@@ -8,7 +8,7 @@ variable "db" {
   })
 }
 
-variable "domain_alb_ingress" {
+variable "public_hosted_zone" {
   type = object({
     domain_name = string
   })

@@ -53,3 +53,15 @@ output "security_group_for_backend_container_id" {
 output "security_group_for_db_id" {
   value = aws_security_group.db.id
 }
+
+########################
+# Route53 Public Hosted Zone
+########################
+
+output "public_hosted_zone_id" {
+  value = data.aws_route53_zone.public.zone_id
+}
+
+output "public_hosted_zone_name" {
+  value = data.aws_route53_zone.public.name
+}

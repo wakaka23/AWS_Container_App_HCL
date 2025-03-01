@@ -252,8 +252,8 @@ resource "aws_security_group" "ingress_alb" {
 resource "aws_vpc_security_group_ingress_rule" "ingress_alb" {
   security_group_id = aws_security_group.ingress_alb.id
   ip_protocol = "tcp"
-  from_port = 80
-  to_port = 80
+  from_port = 443
+  to_port = 443
   cidr_ipv4 = "0.0.0.0/0"
 } 
 
@@ -401,4 +401,13 @@ resource "aws_ec2_client_vpn_authorization_rule" "main" {
   client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.main.id
   target_network_cidr = aws_vpc.main.cidr_block
   authorize_all_groups = true
+}
+
+########################
+# Route53 Public Hosted Zone
+########################
+
+# Refer to public hosted zone
+data "aws_route53_zone" "public" {
+  name = var.public_hosted_zone.domain_name
 }
