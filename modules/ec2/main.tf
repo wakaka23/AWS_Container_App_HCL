@@ -33,23 +33,17 @@ resource "aws_instance" "main" {
   }
 }
 
-########################
-# IAM Role
-########################
-
 # Define IAM instance profile for EC2
 resource "aws_iam_instance_profile" "main" {
   name = "${var.common.env}-instance-profile"
   role = aws_iam_role.main.name
 }
 
-# Define IAM role for EC2
 resource "aws_iam_role" "main" {
   name               = "${var.common.env}-role-for-ec2"
   assume_role_policy = data.aws_iam_policy_document.main.json
 }
 
-# Define trust policy for EC2 role
 data "aws_iam_policy_document" "main" {
   statement {
     effect = "Allow"
@@ -61,11 +55,11 @@ data "aws_iam_policy_document" "main" {
   }
 }
 
-# Define IAM policy for EC2 role
-resource "aws_iam_role_policy_attachments_exclusive" "main" {
-  role_name = aws_iam_role.main.name
-  policy_arns = [
-    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
-    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"
-  ]
+resource "aws_iam_role_policy_attachment" "main" {
+  for_each = {
+    ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    ecr = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"
+  }
+  role = aws_iam_role.main.name
+  policy_arn = each.value
 }

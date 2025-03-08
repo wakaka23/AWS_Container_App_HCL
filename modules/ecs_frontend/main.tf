@@ -100,30 +100,12 @@ resource "aws_ecs_service" "frontend" {
   }
 }
 
-########################
-# CloudWatch Logs
-########################
-
-resource "aws_cloudwatch_log_group" "frontend" {
-  name              = "/ecs/${var.common.env}-frontend"
-  retention_in_days = 14
-
-  tags = {
-    Name = "/ecs/${var.common.env}-frontend"
-  }
-}
-
-########################
-# IAM Role
-########################
-
 # Define ECS task execution role
 resource "aws_iam_role" "task_execution_role" {
   name               = "${var.common.env}-frontend-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.trust_policy_for_task_execution_role.json
 }
 
-# Define trust policy for ECS task execution role
 data "aws_iam_policy_document" "trust_policy_for_task_execution_role" {
   statement {
     effect = "Allow"
@@ -135,7 +117,6 @@ data "aws_iam_policy_document" "trust_policy_for_task_execution_role" {
   }
 }
 
-# Define IAM policy for access to Secrets Manager
 resource "aws_iam_policy" "policy_for_access_to_secrets_manager" {
   name   = "${var.common.env}-GettingSecretsPolicy-frontend"
   policy = data.aws_iam_policy_document.policy_for_access_to_secrets_manager.json
@@ -151,11 +132,24 @@ data "aws_iam_policy_document" "policy_for_access_to_secrets_manager" {
   }
 }
 
-# Define IAM role policy for ECS task execution role
-resource "aws_iam_role_policy_attachments_exclusive" "task_execution_role" {
-  role_name = aws_iam_role.task_execution_role.name
-  policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-    aws_iam_policy.policy_for_access_to_secrets_manager.arn
-  ]
+resource "aws_iam_role_policy_attachment" "task_execution_role" {
+  for_each = {
+    ecs = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    secretsmanager = aws_iam_policy.policy_for_access_to_secrets_manager.arn
+  }
+  role       = aws_iam_role.task_execution_role.name
+  policy_arn = each.value
+}
+
+########################
+# CloudWatch Logs
+########################
+
+resource "aws_cloudwatch_log_group" "frontend" {
+  name              = "/ecs/${var.common.env}-frontend"
+  retention_in_days = 14
+
+  tags = {
+    Name = "/ecs/${var.common.env}-frontend"
+  }
 }

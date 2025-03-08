@@ -93,6 +93,47 @@ resource "aws_ecs_service" "backend" {
   }
 }
 
+# Define ECS task execution role
+resource "aws_iam_role" "task_execution_role" {
+  name               = "${var.common.env}-task-execution-role"
+  assume_role_policy = data.aws_iam_policy_document.trust_policy_for_task_execution_role.json
+}
+
+data "aws_iam_policy_document" "trust_policy_for_task_execution_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_policy" "policy_for_access_to_secrets_manager" {
+  name   = "${var.common.env}-GettingSecretsPolicy-backend"
+  policy = data.aws_iam_policy_document.policy_for_access_to_secrets_manager.json
+}
+
+data "aws_iam_policy_document" "policy_for_access_to_secrets_manager" {
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_role" {
+  for_each = {
+    ecs            = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    secretsmanager = aws_iam_policy.policy_for_access_to_secrets_manager.arn
+  }
+  role       = aws_iam_role.task_execution_role.name
+  policy_arn = each.value
+}
+
 ########################
 # CodeDeploy
 ########################
@@ -145,6 +186,31 @@ resource "aws_codedeploy_deployment_group" "backend" {
   }
 }
 
+# Define IAM role for CodeDeploy
+resource "aws_iam_role" "codedeploy" {
+  name               = "${var.common.env}-role-for-codedeploy"
+  assume_role_policy = data.aws_iam_policy_document.trust_policy_for_codedeploy.json
+}
+
+data "aws_iam_policy_document" "trust_policy_for_codedeploy" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["codedeploy.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "codedeploy" {
+  for_each = {
+    "ecs" = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+  }
+  role       = aws_iam_role.codedeploy.name
+  policy_arn = each.value
+}
+
 ########################
 # Service Discovery
 ########################
@@ -186,77 +252,8 @@ resource "aws_cloudwatch_log_group" "backend" {
 }
 
 ########################
-# IAM Role
+# GitHub Actions
 ########################
-
-# Define ECS task execution role
-resource "aws_iam_role" "task_execution_role" {
-  name               = "${var.common.env}-task-execution-role"
-  assume_role_policy = data.aws_iam_policy_document.trust_policy_for_task_execution_role.json
-}
-
-# Define trust policy for ECS task execution role
-data "aws_iam_policy_document" "trust_policy_for_task_execution_role" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-# Define IAM policy for access to Secrets Manager
-resource "aws_iam_policy" "policy_for_access_to_secrets_manager" {
-  name   = "${var.common.env}-GettingSecretsPolicy-backend"
-  policy = data.aws_iam_policy_document.policy_for_access_to_secrets_manager.json
-}
-
-data "aws_iam_policy_document" "policy_for_access_to_secrets_manager" {
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    actions = [
-      "secretsmanager:GetSecretValue",
-    ]
-  }
-}
-
-# Associate IAM policies with ECS task execution role
-resource "aws_iam_role_policy_attachments_exclusive" "task_execution_role" {
-  role_name = aws_iam_role.task_execution_role.name
-  policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-    aws_iam_policy.policy_for_access_to_secrets_manager.arn
-  ]
-}
-
-# Define IAM role for CodeDeploy
-resource "aws_iam_role" "codedeploy" {
-  name               = "${var.common.env}-role-for-codedeploy"
-  assume_role_policy = data.aws_iam_policy_document.trust_policy_for_codedeploy.json
-}
-
-# Define trust policy for CodeDeploy role
-data "aws_iam_policy_document" "trust_policy_for_codedeploy" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["codedeploy.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-# Associate IAM policy with CodeDeploy role
-resource "aws_iam_role_policy_attachments_exclusive" "codedeploy" {
-  role_name = aws_iam_role.codedeploy.name
-  policy_arns = [
-    "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
-  ]
-}
 
 # Define IAM role for Github Actions
 resource "aws_iam_role" "github_actions" {
@@ -264,7 +261,6 @@ resource "aws_iam_role" "github_actions" {
   assume_role_policy = data.aws_iam_policy_document.trust_policy_for_github_actions.json
 }
 
-# Define trust policy for Github Actions role
 data "aws_iam_policy_document" "trust_policy_for_github_actions" {
   statement {
     effect = "Allow"
@@ -281,7 +277,6 @@ data "aws_iam_policy_document" "trust_policy_for_github_actions" {
   }
 }
 
-# Define IAM policy for Github Actions
 resource "aws_iam_policy" "policy_for_github_actions" {
   name   = "${var.common.env}-policy-for-github-actions"
   policy = data.aws_iam_policy_document.policy_for_github_actions.json
@@ -359,11 +354,11 @@ data "aws_iam_policy_document" "policy_for_github_actions" {
   }
 }
 
-# Associate IAM policies with Github Actions role
-resource "aws_iam_role_policy_attachments_exclusive" "github_actions" {
-  role_name = aws_iam_role.github_actions.name
-  policy_arns = [
-    "arn:aws:iam::aws:policy/IAMReadOnlyAccess",
-    aws_iam_policy.policy_for_github_actions.arn
-  ]
+resource "aws_iam_role_policy_attachment" "github_actions" {
+  for_each = {
+    iam = "arn:aws:iam::aws:policy/IAMReadOnlyAccess",
+    github = aws_iam_policy.policy_for_github_actions.arn
+  }
+  role       = aws_iam_role.github_actions.name
+  policy_arn = each.value
 }
